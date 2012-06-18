@@ -124,24 +124,22 @@ class OFPEchoReply(MsgBase):
 class OFPExperimenter(MsgBase):
     def __init__(self, datapath):
         super(OFPExperimenter, self).__init__(datapath)
+        self.experimenter = None
+        self.exp_type = None
 
     @classmethod
     def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
         msg = super(OFPExperimenter, cls).parser(datapath, version, msg_type,
                                                  msg_len, xid, buf)
-        (experimenter, exp_type) = struct.unpack_from(
+        (msg.experimenter, msg.exp_type) = struct.unpack_from(
             ofproto_v1_3.OFP_EXPERIMENTER_HEADER_PACK_STR, msg.buf,
             ofproto_v1_3.OFP_HEADER_SIZE)
+        return msg
 
-
-class OFPPort(collections.namedtuple('OFPPort', (
-            'port_no', 'hw_addr', 'name', 'config', 'state', 'curr',
-            'advertised', 'supported', 'peer', 'curr_speed', 'max_speed'))):
-
-    @classmethod
-    def parser(cls, buf, offset):
-        port = struct.unpack_from(ofproto_v1_3.OFP_PORT_PACK_STR, buf, offset)
-        return cls(*port)
+    def _serialize_body(self):
+        msg.pack_into(ofproto_v1_3.OFP_EXPERIMENTER_HEADERPACK_STR,
+                      self.buf, ofproto_v1_3.OFP_HEADER_SIZE,
+                      self.experimenter, self.exp_type)
 
 
 @_set_msg_type(ofproto_v1_3.OFPT_FEATURES_REQUEST)
@@ -163,20 +161,11 @@ class OFPSwitchFeatures(MsgBase):
         (msg.datapath_id,
          msg.n_buffers,
          msg.n_tables,
+         msg.auxiliary_id,
          msg.capabilities,
          msg.reserved) = struct.unpack_from(
             ofproto_v1_3.OFP_SWITCH_FEATURES_PACK_STR, msg.buf,
             ofproto_v1_3.OFP_HEADER_SIZE)
-
-        msg.ports = {}
-        n_ports = ((msg_len - ofproto_v1_3.OFP_SWITCH_FEATURES_SIZE) /
-                   ofproto_v1_3.OFP_PORT_SIZE)
-        offset = ofproto_v1_3.OFP_SWITCH_FEATURES_SIZE
-        for i in range(n_ports):
-            port = OFPPort.parser(msg.buf, offset)
-            msg.ports[port.port_no] = port
-            offset += ofproto_v1_3.OFP_PORT_SIZE
-
         return msg
 
 
@@ -237,7 +226,7 @@ class OFPPacketIn(MsgBase):
         msg = super(OFPPacketIn, cls).parser(datapath, version, msg_type,
                                              msg_len, xid, buf)
         (msg.buffer_in, msg.total_len, msg.reason,
-         msg.table_id) = struct.unpack_from(
+         msg.table_id, msg.cookie) = struct.unpack_from(
             ofproto_v1_3.OFP_PACKET_IN_PACK_STR,
             msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
 
@@ -260,16 +249,25 @@ class OFPFlowRemoved(MsgBase):
         (msg.cookie, msg.priority, msg.reason,
          msg.table_id, msg.duration_sec, msg.duration_nsec,
          msg.idle_timeout, msg.hard_timeout, msg.packet_count,
-         msg.bypte_count) = struct.unpack_from(
-            ofproto_v1_3.OFP_FLOW_REMOVED_PACK_STR,
-            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
-
+         msg.byte_count) = struct.unpack_from(
+            ofproto_v1_3.OFP_FLOW_REMOVED_PACK_STR0,
+            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE + ofproto_v1_2.OFP_MATCH_SIZE)
         offset = (ofproto_v1_3.OFP_HEADER_SIZE +
                   ofproto_v1_3.OFP_FLOW_REMOVED_SIZE)
 
         msg.match = OFPMatch(buf, offset - ofproto_v1_3.OFP_MATCH_SIZE)
 
         return msg
+
+
+class OFPPort(collections.namedtuple('OFPPort', (
+            'port_no', 'hw_addr', 'name', 'config', 'state', 'curr',
+            'advertised', 'supported', 'peer', 'curr_speed', 'max_speed'))):
+
+    @classmethod
+    def parser(cls, buf, offset):
+        port = struct.unpack_from(ofproto_v1_3.OFP_PORT_PACK_STR, buf, offset)
+        return cls(*port)
 
 
 @_register_parser
@@ -286,7 +284,7 @@ class OFPPortStatus(MsgBase):
             ofproto_v1_3.OFP_PORT_STATUS_PACK_STR, msg.buf,
             ofproto_v1_3.OFP_HEADER_SIZE)
         msg.desc = OFPPort.parser(msg.buf,
-                                  OFP_PORT_STATUS_DESC_OFFSET)
+                                  ofproto_v1_3.OFP_PORT_STATUS_DESC_OFFSET)
         return msg
 
 
@@ -390,13 +388,13 @@ class OFPAction(OFPActionHeader):
                                 ofproto_v1_3.OFP_ACTION_OUTPUT_SIZE)
 class OFPActionOutput(OFPAction):
     def __init__(self, port, max_len):
-        super(OFPAcitonOutput, self).__init__()
+        super(OFPActionOutput, self).__init__()
         self.port = port
         self.max_len = max_len
 
     @classmethod
     def parser(cls, buf, offset):
-        type_, len_, port, max_len = struct.upack_from(
+        type_, len_, port, max_len = struct.unpack_from(
             ofproto_v1_3.OFP_ACTION_OUTPUT_PACK_STR, buf, offset)
         return cls(port, max_len)
 
@@ -705,8 +703,95 @@ class OFPTableMod(MsgBase):
                       self.table_id, self.config)
 
 
-# class OFPStatsRequest
-# class OFPStatsReply
+@_set_msg_type(ofproto_v1_3.OFPT_MULTIPART_REQUEST)
+class OFPMultipartRequest(MsgBase):
+    def __init__(self, datapath, type_, flags, body):
+        super(OFPMultipartRequest, self).__init__(datapath)
+        self.type = type_
+        self.flags = flags
+
+    def _serialize_multipart_body():
+        pass
+
+    def _serialize_body(self):
+        assert self.body is not None
+        msg_pack_into(ofproto_v1_3.OFP_MULTIPART_REQUEST_PACK_STR,
+                      self.buf, ofproto_v1_3.OFP_HEADER_SIZE,
+                      self.type, self.flags)
+        self._serialize_multipart_body()
+
+# TODO
+@_register_parser
+@_set_msg_type(ofproto_v1_3.OFPT_MULTIPART_REPLY)
+class OFPMultipartReply(MsgBase):
+    _MULTIPART_MSG_TYPES = {}
+
+    @staticmethod
+    def register_multipart_type(body_single_struct=False):
+        def _register_multipart_type(cls):
+            assert cls.cls_multipart_type is not None
+            assert cls.cls_multipart_type not in OFPMultipartReply._MULTIPART_MSG_TYPES
+            assert cls.cls_multipart_body_cls is not None
+            cls.cls_body_single_struct = body_single_struct
+            OFPMultipartReply._MULTIPART_MSG_TYPES[cls.cls_multipart_type] = cls
+            return cls
+        return _register_multipart_type
+
+    def __init__(self, datapath, type_, flags):
+        super(OFPMultipartReply, self).__init__(datapath)
+        self.type = type_
+        self.flags = flags
+        self.body = None
+
+    @staticmethod
+    def register_multipart_type(body_single_struct=False):
+        def _register_multipart_type(cls):
+            assert cls.cls_multipart_type is not None
+            assert cls.cls_multipart_type not in OFPMultipartReply._MULTIPART_MSG_TYPES
+            assert cls.cls_multipart_body_cls is not None
+            cls.cls_body_single_struct = body_single_struct
+            OFPMultipartReply._MULTIPART_MSG_TYPES[cls.cls_multipart_type] = cls
+            return cls
+        return _register_multipart_type
+
+    def __init__(self, datapath):
+        super(OFPMultipartReply, self).__init__(datapath)
+        self.type = None
+        self.flags = None
+        self.body = None
+
+    @classmethod
+    def parser_multipart_body(cls, buf, msg_len, offset):
+        body_cls = cls.cls_multipart_body_cls
+        body = []
+        while offset < msg_len:
+            entry = body_cls.parser(buf, offset)
+            body.append(entry)
+            offset += entry.length
+
+        if cls.cls_body_single_struct:
+            return body[0]
+        return body
+
+    @classmethod
+    def parser_multipart(cls, datapath, version, msg_type, msg_len, xid, buf):
+        msg = MsgBase.parser.__func__(
+            cls, datapath, version, msg_type, msg_len, xid, buf)
+        msg.body = msg.parser_multipart_body(msg.buf, msg.msg_len,
+                                             ofproto_v1_3.OFP_MULTIPART_MSG_SIZE)
+        return msg
+
+    @classmethod
+    def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
+        type_, flags = struct.unpack_from(ofproto_v1_3.OFP_MULTIPART_MSG_PACK_STR,
+                                          buffer(buf),
+                                          ofproto_v1_3.OFP_HEADER_SIZE)
+        multipart_type_cls = cls._MULTIPART_MSG_TYPES.get(type_)
+        msg = multipart_type_cls.parser_multipart(
+            datapath, version, msg_type, msg_len, xid, buf)
+        msg.type = type_
+        msg.flags = flags
+        return msg
 
 
 @_set_msg_type(ofproto_v1_3.OFPT_QUEUE_GET_CONFIG_REQUEST)
