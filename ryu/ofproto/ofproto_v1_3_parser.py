@@ -122,15 +122,16 @@ class OFPEchoReply(MsgBase):
 @_register_parser
 @_set_msg_type(ofproto_v1_3.OFPT_EXPERIMENTER)
 class OFPExperimenter(MsgBase):
-    def __init__(self, datapath):
+    def __init__(self, datapath, experimenter=None, exp_type=None):
         super(OFPExperimenter, self).__init__(datapath)
-        self.experimenter = None
-        self.exp_type = None
+        self.experimenter = experimenter
+        self.exp_type = exp_type
 
     @classmethod
     def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
-        msg = super(OFPExperimenter, cls).parser(datapath, version, msg_type,
-                                                 msg_len, xid, buf)
+        msg = super(OFPExperimenter, cls).parser(datapath, version,
+                                                 msg_type, msg_len,
+                                                 xid, buf)
         (msg.experimenter, msg.exp_type) = struct.unpack_from(
             ofproto_v1_3.OFP_EXPERIMENTER_HEADER_PACK_STR, msg.buf,
             ofproto_v1_3.OFP_HEADER_SIZE)
@@ -251,7 +252,7 @@ class OFPFlowRemoved(MsgBase):
          msg.idle_timeout, msg.hard_timeout, msg.packet_count,
          msg.byte_count) = struct.unpack_from(
             ofproto_v1_3.OFP_FLOW_REMOVED_PACK_STR0,
-            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE + ofproto_v1_2.OFP_MATCH_SIZE)
+            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE + ofproto_v1_3.OFP_MATCH_SIZE)
         offset = (ofproto_v1_3.OFP_HEADER_SIZE +
                   ofproto_v1_3.OFP_FLOW_REMOVED_SIZE)
 
@@ -462,11 +463,6 @@ class OFPActionSetMplsTtl(OFPAction):
 class OFPActionDecMplsTtl(OFPAction):
     def __init__(self):
         super(OFPActionDecMplsTtl, self).__init__()
-
-    @classmethod
-    def parser(cls, buf, offset):
-        msg_pack_into(ofproto_v1_3.OFP_ACTION_HEADER_PACK_STR, buf, offset)
-        return cls()
 
 
 @OFPAction.register_action_type(ofproto_v1_3.OFPAT_SET_NW_TTL,
@@ -720,7 +716,7 @@ class OFPMultipartRequest(MsgBase):
                       self.type, self.flags)
         self._serialize_multipart_body()
 
-# TODO
+
 @_register_parser
 @_set_msg_type(ofproto_v1_3.OFPT_MULTIPART_REPLY)
 class OFPMultipartReply(MsgBase):
@@ -741,23 +737,6 @@ class OFPMultipartReply(MsgBase):
         super(OFPMultipartReply, self).__init__(datapath)
         self.type = type_
         self.flags = flags
-        self.body = None
-
-    @staticmethod
-    def register_multipart_type(body_single_struct=False):
-        def _register_multipart_type(cls):
-            assert cls.cls_multipart_type is not None
-            assert cls.cls_multipart_type not in OFPMultipartReply._MULTIPART_MSG_TYPES
-            assert cls.cls_multipart_body_cls is not None
-            cls.cls_body_single_struct = body_single_struct
-            OFPMultipartReply._MULTIPART_MSG_TYPES[cls.cls_multipart_type] = cls
-            return cls
-        return _register_multipart_type
-
-    def __init__(self, datapath):
-        super(OFPMultipartReply, self).__init__(datapath)
-        self.type = None
-        self.flags = None
         self.body = None
 
     @classmethod
@@ -794,6 +773,22 @@ class OFPMultipartReply(MsgBase):
         return msg
 
 
+# TODO: add multipart type's class
+
+
+@_set_msg_type(ofproto_v1_3.OFPT_BARRIER_REQUEST)
+class OFPBarrierRequest(MsgBase):
+    def __init__(self, datapath):
+        super(OFPBarrierRequest, self).__init__(datapath)
+
+
+@_register_parser
+@_set_msg_type(ofproto_v1_3.OFPT_BARRIER_REPLY)
+class OFPBarrierReply(MsgBase):
+    def __init__(self, datapath):
+        super(OFPBarrierReply, self).__init__(datapath)
+
+
 @_set_msg_type(ofproto_v1_3.OFPT_QUEUE_GET_CONFIG_REQUEST)
 class OFPQueueGetConfigRequest(MsgBase):
     def __init__(self, datapath, port):
@@ -819,13 +814,13 @@ class OFPQueueProp(OFPQueuePropHeader):
     _QUEUE_PROP_PROPERTIES = {}
 
     @staticmethod
-    def register_property(property_, len_):
+    def register_queue_property(property_, len_):
         def _register_property(cls):
             cls.cls_property = property_
             cls.cls_len = len_
             OFPQueueProp._QUEUE_PROP_PROPERTIES[cls.cls_property] = cls
             return cls
-        return _register_property
+        return _register_queue_property
 
     def __init__(self):
         cls = self.__class__
@@ -841,26 +836,62 @@ class OFPQueueProp(OFPQueuePropHeader):
         return cls_.parser(buf, offset)
 
 
-class OFPPacketQueue(object):
-    def __init__(self, queue_id, port, len_, properties):
-        super(OFPPacketQueue, self).__init__()
-        self.queue_id = queue_id
-        self.port = port
-        self.len = len_
-        self.properties = properties
+@OFPQueueProp.register_queue_property(ofproto_v1_3.OFPQT_MIN_RATE,
+                                      ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE)
+class OFPQueuePropMinRate(OFPQueueProp):
+    def __init__(self, rate):
+    super(OFPQueuePropMinRate, self).__init__()
+    self.rate = rate
 
     @classmethod
     def parser(cls, buf, offset):
-        (msg.queue_id, msg.port, msg.len) = struct.unpack_from(
-            ofproto_v1_3.OFP_PACKET_QUEUE_PACK_STR, buf, offset)
+        msg = super(OFPQueuePropMinRate, cls).parser(cls, buf, offset)
+        offset = += ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE
+        (msg.rate,) =
+        struct.unpack_from(ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_PACK_STR,
+                           buf, offset)
+        
+        return msg
+
+@OFPQueueProp.register_queue_property(ofproto_v1_3.OFPQT_MAX_RATE,
+                                      ofproto_v1_3.OFP_QUEUE_PROP_MAX_RATE_SIZE)
+class OFPQueuePropMaxRate(OFPQueueProp):
+    def __init__(self, rate):
+    super(OFPQueuePropMinRate, self).__init__()
+    self.rate = rate
+
+    @classmethod
+    def parser(cls, buf, offset):
+        msg = super(OFPQueuePropMinRate, cls).parser(cls, buf, offset)
+        offset = += ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE
+        (msg.rate,) =
+        struct.unpack_from(ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_PACK_STR,
+                           buf, offset)
+        
+        return msg
+        
+
+# TODO: add ofp_queue_prop_experimenter
+
+class OFPPacketQueue(MsgBase):
+    def __init__(self, datapath):
+        super(OFPPacketQueue, self).__init__(datapath)
+
+    @clasmethod
+    def parser(cls, buf, offset):
+        (msg.queue_id, msg.port, msg.len) =
+        struct.unpack_from(ofproto_v1_3.OFP_PACKET_QUEUE_PACK_STR,
+                           buf, offset)
+
         length = ofproto_v1_3.OFP_PACKET_QUEUE_SIZE
         offset += ofproto_v1_3.OFP_PACKET_QUEUE_SIZE
         msg.properties = []
         while length < msg.len:
-            queue_prop = OFPQueueProp.parser(buf, offset)
-            msg.properties.append(queue_prop)
-            offset += queue_prop.len
-            length += queue_prop
+            properties = OFPQueueProp.parser(buf, offset)
+            msg.properties.append(properties)
+            offset += properties.len
+            length += properties.len
+
         return msg
 
 
@@ -875,30 +906,31 @@ class OFPQueueGetConfigReply(MsgBase):
         msg = super(OFPQueueGetConfigReply, cls).parser(datapath, version,
                                                         msg_type,
                                                         msg_len, xid, buf)
+        offset = ofproto_v1_3.OFP_HEADER_SIZE
         (msg.port,) = struct.unpack_from(
             ofproto_v1_3.OFP_QUEUE_GET_CONFIG_REPLY_PACK_STR, msg.buf,
-            ofproto_v1_3.OFP_HEADER_SIZE)
+            offset)
 
         msg.queues = []
-        length = ofproto_v1_3.OFP_QUEUE_GET_CONFIG_REPLY_SIZE
-        while length < msg.length:
+        offset += ofproto_v1_3.OFP_QUEUE_GET_CONFIG_REPLY_SIZE 
+        while offset < msg.length:
             queue = OFPPacketQueue.parser(buf, offset)
             msg.queues.append(queue)
-
             offset += queue.len
-            length += queue.len
 
         return msg
 
 
 @_set_msg_type(ofproto_v1_3.OFPT_ROLE_REQUEST)
 class OFPRoleRequest(MsgBase):
-    def __init__(self, datapath, role, generation_id):
+    def __init__(self, datapath, role=None, generation_id=None):
         super(OFPRoleRequest, self).__init__(datapath)
         self.role = role
         self.generation_id = generation_id
 
-    def _serialize_body(self):
+    def __serialize_body(self):
+        assert self.role is not None
+        assert self.generation_id is not None
         msg_pack_into(ofproto_v1_3.OFP_ROLE_REQUEST_PACK_STR,
                       self.buf, ofproto_v1_3.OFP_HEADER_SIZE,
                       self.role, self.generation_id)
@@ -913,10 +945,49 @@ class OFPRoleReply(MsgBase):
     @classmethod
     def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
         msg = super(OFPRoleReply, cls).parser(datapath, version,
-                                              msg_type,
-                                              msg_len, xid, buf)
+                                              msg_type, msg_len, xid,
+                                              buf)
         (msg.role, msg.generation_id) = struct.unpack_from(
             ofproto_v1_3.OFP_ROLE_REQUEST_PACK_STR, msg.buf,
             ofproto_v1_3.OFP_HEADER_SIZE)
 
-        return msg
+
+@_set_msg_type(ofproto_v1_3.OFPT_GET_ASYNC_REQUEST)
+class OFPGetAsyncRequest(MsgBase):
+    def __init__(self, datapath):
+        super(OFPGetAsyncRequest, self).__init__(datapath)
+
+
+@_register_parser
+@_set_msg_type(ofproto_v1_3.OFPT_GET_ASYNC_REPLY)
+class OFPGetAsyncReply(MsgBase):
+    def __init__(self, datapath):
+        super(OFPGetAsyncReply, self).__init__(datapath)
+
+    @classmethod
+    def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
+        msg = super(OFPGetAsyncReply, cls).parser(datapath, version,
+                                                  msg_type, msg_len,
+                                                  xid, buf)
+        (msg.packet_in_mask, msg.port_status_mask,
+         msg.flow_removed_mask) =
+        struct.unpack_from(ofproto_v1_3.OFP_ASYNC_CONFIG_PACK_STR,
+                           msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
+
+
+@_register_parser
+@_set_msg_type(ofproto_v1_3.OFPT_SET_ASYNC)
+class OFPGetAsyncReply(MsgBase):
+    def __init__(self, datapath):
+        super(OFPSetAsync, self).__init__(datapath)
+
+    @classmethod
+    def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
+        msg = super(OFPSetAsync, cls).parser(datapath, version,
+                                             msg_type, msg_len,
+                                             xid, buf)
+        (msg.packet_in_mask, msg.port_status_mask,
+         msg.flow_removed_mask) =
+        struct.unpack_from(ofproto_v1_3.OFP_ASYNC_CONFIG_PACK_STR,
+                           msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
+
