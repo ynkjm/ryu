@@ -252,7 +252,8 @@ class OFPFlowRemoved(MsgBase):
          msg.idle_timeout, msg.hard_timeout, msg.packet_count,
          msg.byte_count) = struct.unpack_from(
             ofproto_v1_3.OFP_FLOW_REMOVED_PACK_STR0,
-            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE + ofproto_v1_3.OFP_MATCH_SIZE)
+            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE +
+            ofproto_v1_3.OFP_MATCH_SIZE)
         offset = (ofproto_v1_3.OFP_HEADER_SIZE +
                   ofproto_v1_3.OFP_FLOW_REMOVED_SIZE)
 
@@ -836,7 +837,7 @@ class OFPFlowStats(object):
          flow_stats.cookie, flow_stats.packet_count,
          flow_stats.byte_count) = struct.unpack_from(
             ofproto_v1_3.OFP_FLOW_STATS_0_PACK_STR, buf, offset)
-         offset += ofproto_v1_3.OFP_FLOW_STATS_0_SIZE
+        offset += ofproto_v1_3.OFP_FLOW_STATS_0_SIZE
 
         flow_stats.match = OFPMatch.parse(buf, offset)
 
@@ -845,7 +846,7 @@ class OFPFlowStats(object):
 
 class OFPFlowStatsRequestBase(OFPMultipartRequest):
     def __init__(self, datapath, flags, table_id, out_port, out_group,
-                 cookie, cookie_mask)
+                 cookie, cookie_mask):
         super(OFPFlowStatsRequestBase, self).__init__(datapath, flags)
         self.table_id = table_id
         self.out_port = out_port
@@ -868,7 +869,7 @@ class OFPFlowStatsRequestBase(OFPMultipartRequest):
 @_set_msg_type(ofproto_v1_3.OFPT_MULTIPART_REQUEST)
 class OFPFlowStatsRequest(OFPFlowStatsRequestBase):
     def __init__(self, datapath, flags, table_id, out_port, out_group,
-                 cookie, cookie_mask)
+                 cookie, cookie_mask):
         super(OFPFlowStatsRequest, self).__init__(datapath, table_id,
                                                   out_port, out_group,
                                                   cookie, cookie_mask)
@@ -897,7 +898,7 @@ class OFPAggregateStats(collections.namedtuple('OFPAggregateStats',
 @_set_msg_type(ofproto_v1_3.OFPT_MULTIPART_REQUEST)
 class OFPAggregateStatsRequest(OFPFlowStatsRequestBase):
     def __init__(self, datapath, flags, table_id, out_port, out_group,
-                 cookie, cookie_mask)
+                 cookie, cookie_mask):
         super(OFPAggregateStatsRequest, self).__init__(datapath,
                                                        table_id,
                                                        out_port,
@@ -977,7 +978,6 @@ class OFPPortStatsReply(OFPMultipartReply):
         super(OFPPortStatsReply, self).__init__(datapath)
 
 
-
 class OFPQueueStats(collections.namedtuple('OFPQueueStats',
         ('port_no', 'queue_id', 'tx_bytes', 'tx_packets', 'tx_errors',
          'duration_sec', 'duration_nsec'))):
@@ -1013,7 +1013,7 @@ class OFPQueueStatsReply(OFPMultipartReply):
         super(OFPQueueStatsReply, self).__init__(datapath)
 
 
-class OFPGroupStats(collections.namedtuple('OFPGroupStats', 
+class OFPGroupStats(collections.namedtuple('OFPGroupStats',
         ('length', 'group_id', 'ref_count', 'packet_count',
          'byte_count', 'duration_sec', 'duration_nsec'))):
     @classmethod
@@ -1059,9 +1059,8 @@ class OFPGroupDescStats(object):
     def parser(cls, buf, offset):
         stats = cls()
 
-        (stats.length, stats.type, stats.group_id) =
-        struct.unpack_from(ofproto_v1_3.OFP_GROUP_DESC_STATS_PACK_STR,
-                           buf, offset)
+        (stats.length, stats.type, stats.group_id) = struct.unpack_from(
+            ofproto_v1_3.OFP_GROUP_DESC_STATS_PACK_STR, buf, offset)
         offset += ofproto_v1_3.OFP_GROUP_DESC_STATS_SIZE
 
         stats.bucket = []
@@ -1074,7 +1073,7 @@ class OFPGroupDescStats(object):
             length += bucket.len
 
         return stats
-        
+
 
 @_set_stats_type(ofproto_v1_3.OFPMP_GROUP_DESC, OFPGroupDescStats)
 @_set_msg_type(ofproto_v1_3.OFPT_MULTIPART_REQUEST)
@@ -1095,9 +1094,8 @@ class OFPGroupFeaturesStats(collections.namedtuple('OFPGroupFeaturesStats',
         ('types', 'capabilities', 'max_groups', 'actions'))):
     @classmethod
     def parser(cls, buf, offset):
-        group_features =
-        struct.unpack_from(ofproto_v1_3.OFP_GROUP_FEATURES_PACK_STR,
-                           buf, offset)
+        group_features = struct.unpack_from(
+            ofproto_v1_3.OFP_GROUP_FEATURES_PACK_STR, buf, offset)
         stats = cls(*group_features)
         stats.length = ofproto_v1_3.OFP_GROUP_FEATURES_SIZE
         return stats
@@ -1129,7 +1127,7 @@ class OFPMeterBandStats(object):
         band_stats = struct.unpack_from(
             ofproto_v1_3.OFP_METER_BAND_STATS_PACK_STR, buf, offset)
         return cls(*band_stats)
-          
+
 
 class OFPMeterStats(object):
     def __init__(self):
@@ -1150,20 +1148,19 @@ class OFPMeterStats(object):
         (meter_stats.meter_id, meter_stats.len,
          meter_stats.flow_count, meter_stats.packet_in_count,
          meter_stats.byte_in_count, meter_stats.duration_sec,
-         meter_stats.duration_nsec) = \
-         struct.unpack_from(ofproto_v1_3.OFP_METER_STATS_PACK_STR,
-                            buf, offset)
-         offset += ofproto_v1_3.OFP_METER_STATS_SIZE
+         meter_stats.duration_nsec) = struct.unpack_from(
+            ofproto_v1_3.OFP_METER_STATS_PACK_STR, buf, offset)
+        offset += ofproto_v1_3.OFP_METER_STATS_SIZE
 
-         meter_stats.band_stats = []
-         length = ofproto_v1_3.OFP_METER_STATS_SIZE
-         while length < meter_stats.len:
-             band_stats = OFPMeterBandStats.parser(buf, offset)
-             meter_stats.band_stats.append(band_stats)
-             offset += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE
-             length += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE             
+        meter_stats.band_stats = []
+        length = ofproto_v1_3.OFP_METER_STATS_SIZE
+        while length < meter_stats.len:
+            band_stats = OFPMeterBandStats.parser(buf, offset)
+            meter_stats.band_stats.append(band_stats)
+            offset += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE
+            length += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE             
 
-         return meter_stats
+        return meter_stats
 
 
 @_set_stats_type(ofproto_v1_3.OFPMP_METER, OFPMeterStats)
@@ -1215,20 +1212,19 @@ class OFPMeterConfigStats(object):
         meter_config = cls()
 
         (meter_config.length, meter_config.flags,
-         meter_config.meter_id) = \
-         struct.unpack_from(ofproto_v1_3.OFP_METER_CONFIG_PACK_STR,
-                            buf, offset)
-         offset += ofproto_v1_3.OFP_METER_CONFIG_SIZE
+         meter_config.meter_id) = struct.unpack_from(
+            ofproto_v1_3.OFP_METER_CONFIG_PACK_STR, buf, offset)
+        offset += ofproto_v1_3.OFP_METER_CONFIG_SIZE
 
-         meter_config.bands = []
-         length = ofproto_v1_3.OFP_METER_CONFIG_SIZE
-         while length < meter_config.length:
-             band_header = OFPMeterBandHeader.parser(buf, offset)
-             meter_config.bands.append(band_header)
-             offset += band_header.len
-             length += band_header.len
+        meter_config.bands = []
+        length = ofproto_v1_3.OFP_METER_CONFIG_SIZE
+        while length < meter_config.length:
+            band_header = OFPMeterBandHeader.parser(buf, offset)
+            meter_config.bands.append(band_header)
+            offset += band_header.len
+            length += band_header.len
 
-         return meter_config
+        return meter_config
 
 
 @_set_stats_type(ofproto_v1_3.OFPMP_METER_CONFIG, OFPMeterConfigStats)
@@ -1258,9 +1254,8 @@ class OFPMeterFeaturesStats(collections.namedtuple('OFPMeterFeaturesStats',
          'max_color'))):
     @classmethod
     def parser(cls, buf, offset):
-        meter_features = \
-            struct.unpack_from(ofproto_v1_3.OFP_METER_FEATURES_PACK_STR,
-                               buf, offset)
+        meter_features = struct.unpack_from(
+            ofproto_v1_3.OFP_METER_FEATURES_PACK_STR, buf, offset)
         stats = cls(*meter_features)
         stats.length = ofproto_v1_3.OFP_METER_FEATURES_SIZE
         return stats
@@ -1302,11 +1297,11 @@ class OFPTableFeaturesStats(object):
          table_features.max_entries, table_features.properties) = \
          struct.unpack_from(ofproto_v1_3.OFP_TABLE_FEATURES_PACK_STR,
                             buf, offset)
-         offset += ofproto_v1_3.OFP_TABLE_FEATURES_SIZE
+        offset += ofproto_v1_3.OFP_TABLE_FEATURES_SIZE
 
-         # TODO: parse ofp_table_feature_prop_header
+        # TODO: parse ofp_table_feature_prop_header
 
-         return table_features
+        return table_features
 
 
 @_set_stats_type(ofproto_v1_3.OFPMP_TABLE_FEATURES, OFPTableFeaturesStats)
@@ -1326,6 +1321,8 @@ class OFPTableFeaturesStatsRequest(OFPMultipartRequest):
 
     def _serialize_stats_body(self):
         # TODO
+        pass
+
 
 @OFPMultipartReply.register_stats_type()
 @_set_stats_type(ofproto_v1_3.OFPMP_TABLE_FEATURES, OFPTableFeaturesStats)
@@ -1417,38 +1414,38 @@ class OFPQueueProp(OFPQueuePropHeader):
                                       ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE)
 class OFPQueuePropMinRate(OFPQueueProp):
     def __init__(self, rate):
-    super(OFPQueuePropMinRate, self).__init__()
-    self.rate = rate
+        super(OFPQueuePropMinRate, self).__init__()
+        self.rate = rate
 
     @classmethod
     def parser(cls, buf, offset):
         msg = super(OFPQueuePropMinRate, cls).parser(cls, buf, offset)
-        offset = += ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE
-        (msg.rate,) =
-        struct.unpack_from(ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_PACK_STR,
-                           buf, offset)
-        
+        offset += ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE
+        (msg.rate,) = struct.unpack_from(
+            ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_PACK_STR, buf,
+            offset)
         return msg
+
 
 @OFPQueueProp.register_queue_property(ofproto_v1_3.OFPQT_MAX_RATE,
                                       ofproto_v1_3.OFP_QUEUE_PROP_MAX_RATE_SIZE)
 class OFPQueuePropMaxRate(OFPQueueProp):
     def __init__(self, rate):
-    super(OFPQueuePropMinRate, self).__init__()
-    self.rate = rate
+        super(OFPQueuePropMinRate, self).__init__()
+        self.rate = rate
 
     @classmethod
     def parser(cls, buf, offset):
         msg = super(OFPQueuePropMinRate, cls).parser(cls, buf, offset)
-        offset = += ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE
-        (msg.rate,) =
-        struct.unpack_from(ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_PACK_STR,
-                           buf, offset)
-        
+        offset += ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE
+        (msg.rate,) = struct.unpack_from(
+            ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_PACK_STR, buf,
+            offset)
         return msg
-        
+
 
 # TODO: add ofp_queue_prop_experimenter
+
 
 class OFPPacketQueue(MsgBase):
     def __init__(self, datapath):
@@ -1456,9 +1453,8 @@ class OFPPacketQueue(MsgBase):
 
     @clasmethod
     def parser(cls, buf, offset):
-        (msg.queue_id, msg.port, msg.len) =
-        struct.unpack_from(ofproto_v1_3.OFP_PACKET_QUEUE_PACK_STR,
-                           buf, offset)
+        (msg.queue_id, msg.port, msg.len) = struct.unpack_from(
+            ofproto_v1_3.OFP_PACKET_QUEUE_PACK_STR, buf, offset)
 
         length = ofproto_v1_3.OFP_PACKET_QUEUE_SIZE
         offset += ofproto_v1_3.OFP_PACKET_QUEUE_SIZE
@@ -1547,9 +1543,9 @@ class OFPGetAsyncReply(MsgBase):
                                                   msg_type, msg_len,
                                                   xid, buf)
         (msg.packet_in_mask, msg.port_status_mask,
-         msg.flow_removed_mask) =
-        struct.unpack_from(ofproto_v1_3.OFP_ASYNC_CONFIG_PACK_STR,
-                           msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
+         msg.flow_removed_mask) = struct.unpack_from(
+            ofproto_v1_3.OFP_ASYNC_CONFIG_PACK_STR, msg.buf,
+            ofproto_v1_3.OFP_HEADER_SIZE)
 
 
 @_register_parser
@@ -1564,7 +1560,6 @@ class OFPGetAsyncReply(MsgBase):
                                              msg_type, msg_len,
                                              xid, buf)
         (msg.packet_in_mask, msg.port_status_mask,
-         msg.flow_removed_mask) =
-        struct.unpack_from(ofproto_v1_3.OFP_ASYNC_CONFIG_PACK_STR,
-                           msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
-
+         msg.flow_removed_mask) = struct.unpack_from(
+            ofproto_v1_3.OFP_ASYNC_CONFIG_PACK_STR, msg.buf,
+            ofproto_v1_3.OFP_HEADER_SIZE)

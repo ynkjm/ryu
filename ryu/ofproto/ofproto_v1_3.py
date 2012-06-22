@@ -134,7 +134,7 @@ assert calcsize(OFP_QUEUE_PROP_HEADER_PACK_STR) == OFP_QUEUE_PROP_HEADER_SIZE
 
 # struct ofp_queue_prop_min_rate
 OFP_QUEUE_PROP_MIN_RATE_PACK_STR = '!H6x'
-OFP_QUEUE_PROP_MIN_RATE__SIZE = 16
+OFP_QUEUE_PROP_MIN_RATE_SIZE = 16
 assert (calcsize(OFP_QUEUE_PROP_MIN_RATE_PACK_STR) +
         OFP_QUEUE_PROP_HEADER_SIZE) == OFP_QUEUE_PROP_MIN_RATE_SIZE
 
@@ -244,17 +244,20 @@ OFPIT_EXPERIMENTER = 0xFFFF   # Experimenter instruction
 # struct ofp_instruction_goto_table
 OFP_INSTRUCTION_GOTO_TABLE_PACK_STR = '!HHB3x'
 OFP_INSTRUCTION_GOTO_TABLE_SIZE = 8
-assert calcsize(OFP_INSTRUCTION_GOTO_TABLE_PACK_STR) == OFP_INSTRUCTION_GOTO_TABLE_SIZE
+assert (calcsize(OFP_INSTRUCTION_GOTO_TABLE_PACK_STR) ==
+        OFP_INSTRUCTION_GOTO_TABLE_SIZE)
 
 # struct ofp_instruction_write_metadata
 OFP_INSTRUCTION_WRITE_METADATA_PACK_STR = '!HH4xQQ'
 OFP_INSTRUCTION_WRITE_METADATA_SIZE = 24
-assert calcsize(OFP_INSTRUCTION_WRITE_METADATA_PACK_STR) == OFP_INSTRUCTION_WRITE_METADATA_SIZE
+assert (calcsize(OFP_INSTRUCTION_WRITE_METADATA_PACK_STR) ==
+        OFP_INSTRUCTION_WRITE_METADATA_SIZE)
 
 # struct ofp_instruction_actions
 OFP_INSTRUCTION_ACTIONS_PACK_STR = '!HH4x'
 OFP_INSTRUCTION_ACTIONS_SIZE = 8
-assert calcsize(OFP_INSTRUCTION_ACTIONS_PACK_STR) == OFP_INSTRUCTION_ACTIONS_SIZE
+assert (calcsize(OFP_INSTRUCTION_ACTIONS_PACK_STR) ==
+        OFP_INSTRUCTION_ACTIONS_SIZE)
 
 # struct ofp_instruction_meter
 OFP_INSTRUCTION_METER_PACK_STR = '!HHI'
@@ -440,7 +443,7 @@ OFPM_CONTROLLER = 0xfffffffe  # Meter for controller connection.
 OFPM_ALL = 0xffffffff  # Represents all meters for stat requests commands.
 
 # enum ofp_meter_mod_command
-OFPMC_ADD = 0  # New meter. 
+OFPMC_ADD = 0  # New meter.
 OFPMC_MODIFY = 1  # Modify specified meter.
 OFPMC_DELETE = 2  # Delete specified meter.
 
@@ -542,26 +545,24 @@ assert (calcsize(OFP_FLOW_STATS_REQUEST_PACK_STR) ==
         OFP_FLOW_STATS_REQUEST_SIZE)
 
 # struct ofp_flow_stats
-
-_OFP_FLOW_STATS_0_PACK_STR = 'HBxIIHHHH4xQQQ' 
-OFP_FLOW_STATS_0_PACK_STR = '!' + _OFP_FLOW_STATS_0_PACK_STR 
+_OFP_FLOW_STATS_0_PACK_STR = 'HBxIIHHHH4xQQQ'
+OFP_FLOW_STATS_0_PACK_STR = '!' + _OFP_FLOW_STATS_0_PACK_STR
 OFP_FLOW_STATS_0_SIZE = 48
-assert ((calcsize(OFP_FLOW_STATS_0_PACK_STR) == OFP_FLOW_STATS_0_SIZE
-OFP_FLOW_STATS_PACK_STR =  (OFP_FLOW_STATS_0_PACK_STR +
-                            _OFP_MATCH_PACK_STR)
+assert calcsize(OFP_FLOW_STATS_0_PACK_STR) == OFP_FLOW_STATS_0_SIZE
+OFP_FLOW_STATS_PACK_STR = (OFP_FLOW_STATS_0_PACK_STR +
+                           _OFP_MATCH_PACK_STR)
 OFP_FLOW_STATS_SIZE = 56
 assert calcsize(OFP_FLOW_STATS_PACK_STR) == OFP_FLOW_STATS_SIZE
 
 # struct ofp_flow_stats_request
 _OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR = 'B3xII4xQQ'
-OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR = ('!' +
-                                          _OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR)
+OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR = '!' + \
+    _OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR
 OFP_AGGREGATE_STATS_REQUEST_0_SIZE = 32
 assert (calcsize(OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR) ==
         OFP_AGGREGATE_STATS_REQUEST_0_SIZE)
-OFP_AGGREGATE_STATS_REQUEST_PACK_STR =
-         (OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR +
-          _OFP_MATCH_PACK_STR)
+OFP_AGGREGATE_STATS_REQUEST_PACK_STR = \
+    OFP_AGGREGATE_STATS_REQUEST_0_PACK_STR + _OFP_MATCH_PACK_STR
 OFP_AGGREGATE_STATS_REQUEST_SIZE = 40
 assert (calcsize(OFP_AGGREGATE_STATS_REQUEST_PACK_STR) ==
         OFP_AGGREGATE_STATS_REQUEST_SIZE)
@@ -586,7 +587,7 @@ assert calcsize(OFP_TABLE_STATS_PACK_STR) == OFP_TABLE_STATS_SIZE
 # struct ofp_table_features
 OFP_MAX_TABLE_NAME_LEN = 32
 OFP_MAX_TABLE_NAME_LEN_STR = str(OFP_MAX_TABLE_NAME_LEN)
-OFP_TABLE_FEATURES_PACK_STR = '!HB5x' + OFP_MAX_TABLE_NAME_LEN_str + \
+OFP_TABLE_FEATURES_PACK_STR = '!HB5x' + OFP_MAX_TABLE_NAME_LEN_STR + \
                               'c' + 'QQII'
 OFP_TABLE_FEATURES_SIZE = 64
 assert (calcsize(OFP_TABLE_FEATURES_PACK_STR) ==
@@ -595,7 +596,7 @@ assert (calcsize(OFP_TABLE_FEATURES_PACK_STR) ==
 # enum ofp_table_feature_prop_type
 OFPTFPT_INSTRUCTIONS = 0
 OFPTFPT_INSTRUCTIONS_MISS = 1
-OFPTFPT_NEXT_TABLES = 2 
+OFPTFPT_NEXT_TABLES = 2
 OFPTFPT_NEXT_TABLES_MISS = 3
 OFPTFPT_WRITE_ACTIONS = 4
 OFPTFPT_WRITE_ACTIONS_MISS = 5
@@ -659,8 +660,8 @@ assert calcsize(OFP_QUEUE_STATS_PACK_STR) == OFP_QUEUE_STATS_SIZE
 # struct ofp_group_stats_request
 OFP_GROUP_STATS_REQUEST_PACK_STR = '!I4x'
 OFP_GROUP_STATS_REQUEST_SIZE = 8
-assert (calcsize(OFP_GROUP_STATS__REQUEST_PACK_STR) ==
-        OFP_GROUP_STATS__REQUEST_SIZE)
+assert (calcsize(OFP_GROUP_STATS_REQUEST_PACK_STR) ==
+        OFP_GROUP_STATS_REQUEST_SIZE)
 
 # struct ofp_group_stats
 OFP_GROUP_STATS_PACK_STR = '!H2xII4xQQII'
@@ -841,7 +842,8 @@ OFPBRC_BAD_TABLE_ID = 9        # Specified table-id invalid or does not exist.
 OFPBRC_IS_SLAVE = 10        # Denied because controller is slave.
 OFPBRC_BAD_PORT = 11        # Invalid port.
 OFBRC_BAD_PACKET = 12        # Invalid packet in packet-out
-OFPBRC_MULTIPART_BUFFER_OVERFLOW = 13        # ofp_multipart_request overflowed the assigned buffer.
+OFPBRC_MULTIPART_BUFFER_OVERFLOW = 13       # ofp_multipart_request
+                                            # overflowed the assigned buffer.
 
 # enum ofp_bad_action_code
 OFPBAC_BAD_TYPE = 0        # Unknown action type.
@@ -966,7 +968,7 @@ OFPRRFC_BAD_ROLE = 2        # Invalid role.
 OFPMMFC_UNKNOWN = 0        # Unspecified error.
 OFPMMFC_METER_EXISTS = 1        # Meter not added because a Meter ADD
                                 # attempted to replace an existing Meter.
-OFPMMFC_INVALID_METER =2        # Meter not added because Meter specified
+OFPMMFC_INVALID_METER = 2        # Meter not added because Meter specified
                                 # is invalid.
 OFPMMFC_UNKNOWN_METER = 3        # Meter not modified because a Meter
                                  # MODIFY attempted to modify a non-existent
