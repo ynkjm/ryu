@@ -1090,7 +1090,7 @@ class OFPGroupDescStatsReply(OFPMultipartReply):
         super(OFPGroupDescStatsReply, self).__init__(datapath)
 
 
-class OFPGroupFeaturesStats(collections.namedtuple('OFPGroupFeaturesStats', 
+class OFPGroupFeaturesStats(collections.namedtuple('OFPGroupFeaturesStats',
         ('types', 'capabilities', 'max_groups', 'actions'))):
     @classmethod
     def parser(cls, buf, offset):
@@ -1158,7 +1158,7 @@ class OFPMeterStats(object):
             band_stats = OFPMeterBandStats.parser(buf, offset)
             meter_stats.band_stats.append(band_stats)
             offset += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE
-            length += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE             
+            length += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE
 
         return meter_stats
 
@@ -1485,7 +1485,7 @@ class OFPQueueGetConfigReply(MsgBase):
             offset)
 
         msg.queues = []
-        offset += ofproto_v1_3.OFP_QUEUE_GET_CONFIG_REPLY_SIZE 
+        offset += ofproto_v1_3.OFP_QUEUE_GET_CONFIG_REPLY_SIZE
         while offset < msg.length:
             queue = OFPPacketQueue.parser(buf, offset)
             msg.queues.append(queue)
