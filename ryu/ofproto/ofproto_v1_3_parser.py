@@ -607,8 +607,9 @@ class OFPActionSetField(OFPAction):
         # TODO: serialize OXM
 
 
-@OFPAction.register_action_type(ofproto_v1_3.OFPAT_EXPERIMENTER,
-                                ofproto_v1_3.OFP_ACTION_EXPERIMENTER_HEADER_SIZE)
+@OFPAction.register_action_type(
+    ofproto_v1_3.OFPAT_EXPERIMENTER,
+    ofproto_v1_3.OFP_ACTION_EXPERIMENTER_HEADER_SIZE)
 class OFPActionExperimenter(OFPAction):
     def __init__(self, experimenter):
         super(OFPActionExperimenter, self).__init__()
@@ -769,14 +770,14 @@ class OFPMultipartReply(MsgBase):
         msg = MsgBase.parser.__func__(
             cls, datapath, version, msg_type, msg_len, xid, buf)
         msg.body = msg.parser_stats_body(msg.buf, msg.msg_len,
-                                             ofproto_v1_3.OFP_MULTIPART_REPLY_SIZE)
+                                         ofproto_v1_3.OFP_MULTIPART_REPLY_SIZE)
         return msg
 
     @classmethod
     def parser(cls, datapath, version, msg_type, msg_len, xid, buf):
-        type_, flags = struct.unpack_from(ofproto_v1_3.OFP_MULTIPART_REPLY_PACK_STR,
-                                          buffer(buf),
-                                          ofproto_v1_3.OFP_HEADER_SIZE)
+        type_, flags = struct.unpack_from(
+            ofproto_v1_3.OFP_MULTIPART_REPLY_PACK_STR, buffer(buf),
+            ofproto_v1_3.OFP_HEADER_SIZE)
         stats_type_cls = cls._STATS_MSG_TYPES.get(type_)
         msg = stats_type_cls.parser_stats(
             datapath, version, msg_type, msg_len, xid, buf)
@@ -1410,8 +1411,9 @@ class OFPQueueProp(OFPQueuePropHeader):
         return cls_.parser(buf, offset)
 
 
-@OFPQueueProp.register_queue_property(ofproto_v1_3.OFPQT_MIN_RATE,
-                                      ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE)
+@OFPQueueProp.register_queue_property(
+    ofproto_v1_3.OFPQT_MIN_RATE,
+    ofproto_v1_3.OFP_QUEUE_PROP_MIN_RATE_SIZE)
 class OFPQueuePropMinRate(OFPQueueProp):
     def __init__(self, rate):
         super(OFPQueuePropMinRate, self).__init__()
@@ -1427,8 +1429,9 @@ class OFPQueuePropMinRate(OFPQueueProp):
         return msg
 
 
-@OFPQueueProp.register_queue_property(ofproto_v1_3.OFPQT_MAX_RATE,
-                                      ofproto_v1_3.OFP_QUEUE_PROP_MAX_RATE_SIZE)
+@OFPQueueProp.register_queue_property(
+    ofproto_v1_3.OFPQT_MAX_RATE,
+    ofproto_v1_3.OFP_QUEUE_PROP_MAX_RATE_SIZE)
 class OFPQueuePropMaxRate(OFPQueueProp):
     def __init__(self, rate):
         super(OFPQueuePropMinRate, self).__init__()
