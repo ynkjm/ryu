@@ -252,12 +252,12 @@ class OFPFlowRemoved(MsgBase):
          msg.idle_timeout, msg.hard_timeout, msg.packet_count,
          msg.byte_count) = struct.unpack_from(
             ofproto_v1_3.OFP_FLOW_REMOVED_PACK_STR0,
-            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE +
-            ofproto_v1_3.OFP_MATCH_SIZE)
-        offset = (ofproto_v1_3.OFP_HEADER_SIZE +
-                  ofproto_v1_3.OFP_FLOW_REMOVED_SIZE)
+            msg.buf, ofproto_v1_3.OFP_HEADER_SIZE)
 
-        msg.match = OFPMatch(buf, offset - ofproto_v1_3.OFP_MATCH_SIZE)
+        offset = (ofproto_v1_3.OFP_FLOW_REMOVED_SIZE -
+                  ofproto_v1_3.OFP_MATCH_SIZE)
+
+        msg.match = OFPMatch(buf, offset)
 
         return msg
 
@@ -325,7 +325,7 @@ class OFPFlowMod(MsgBase):
     def __init__(self, datapath, cookie, cookie_mask, table_id, command,
                  idle_timeout, hard_timeout, priority, buffer_id, out_port,
                  out_group, flags, match):
-        super(OFPFLowMod, self).__init__(datapath)
+        super(OFPFlowMod, self).__init__(datapath)
         self.cookie = cookie
         self.cookie_mask = cookie_mask
         self.table_id = table_id
@@ -345,10 +345,10 @@ class OFPFlowMod(MsgBase):
                       self.cookie, self.cookie_mask, self.table_id,
                       self.command, self.idle_timeout, self.hard_timeout,
                       self.priority, self.buffer_id, self.out_port,
-                      self.out_group, self.flag)
+                      self.out_group, self.flags)
 
-        offset += (ofproto_v1_3.OFP_OFP_FLOW_MOD_SIZE -
-                   ofproto_v1_3.OFP_MATCH_SIZE - ofproto_v1_3.OFP_HEADER_SIZE)
+        offset = (ofproto_v1_3.OFP_OFP_FLOW_MOD_SIZE -
+                  ofproto_v1_3.OFP_MATCH_SIZE - ofproto_v1_3.OFP_HEADER_SIZE)
         self.match.serialize(self.buf, offset)
 
 
@@ -457,7 +457,7 @@ class OFPActionSetMplsTtl(OFPAction):
         return cls(mpls_ttl)
 
     def serialize(self, buf, offset):
-        msg_pack_into(ofproto_v1_3.OFP_ACTION_MPLS_TTL, buf,
+        msg_pack_into(ofproto_v1_3.OFP_ACTION_MPLS_TTL_PACK_STR, buf,
                       offset, self.type, self.len, self.mpls_ttl)
 
 
@@ -536,8 +536,8 @@ class OFPActionPushVlan(OFPAction):
         return cls(ethertype)
 
     def serialize(self, buf, offset):
-        msg_pack_into(ofproto_v1_3.OFP_ACTION_PUSH_PACK_STR, buff, offset,
-                      self.ethertype)
+        msg_pack_into(ofproto_v1_3.OFP_ACTION_PUSH_PACK_STR, buf, offset,
+                      self.type, self.len, self.ethertype)
 
 
 @OFPAction.register_action_type(ofproto_v1_3.OFPAT_PUSH_MPLS,
@@ -554,7 +554,7 @@ class OFPActionPushMpls(OFPAction):
         return cls(ethertype)
 
     def serialize(self, buf, offset):
-        msg_pack_into(ofproto_v1_3.OFP_ACTION_PUSH_PACK_STR, buff, offset,
+        msg_pack_into(ofproto_v1_3.OFP_ACTION_PUSH_PACK_STR, buf, offset,
                       self.ethertype)
 
 
@@ -622,7 +622,7 @@ class OFPActionExperimenter(OFPAction):
 
     def serialize(self, buf, offset):
         msg_pack_into(ofproto_v1_3.OFP_ACTION_EXPERIMENTER_HEADER_PACK_STR,
-                      buf, offset)
+                      buf, offset, self.type, self.len, self.experimenter)
 
 
 class OFPBucket(object):
