@@ -1070,7 +1070,7 @@ class OFPGroupDescStats(object):
             bucket = OFPBucket.parser(buf, offset)
             stats.bucket.append(bucket)
 
-            offset += bucketlen
+            offset += bucket.len
             length += bucket.len
 
         return stats
@@ -1118,6 +1118,19 @@ class OFPGroupFeaturesStatsReply(OFPMultipartReply):
         super(OFPGroupFeaturesStatsReply, self).__init__(datapath)
 
 
+class OFPMeterBandStats(object):
+    def __init__(self, packet_band_count, byte_band_count):
+        super(OFPMeterBandStats, self).__init__()
+        self.packet_band_count = packet_bound_count
+        self.byte_band_count = byte_band_count
+
+    @classmethod
+    def parser(cls, buf, offset):
+        band_stats = struct.unpack_from(
+            ofproto_v1_3.OFP_METER_BAND_STATS_PACK_STR, buf, offset)
+        return cls(*band_stats)
+          
+
 class OFPMeterStats(object):
     def __init__(self):
         super(OFPMeterStats, self).__init__()
@@ -1128,6 +1141,7 @@ class OFPMeterStats(object):
         self.byte_in_count = None
         self.duration_sec = None
         self.duration_nsec = None
+        self.band_stats = None
 
     @classmethod
     def parser(cls, buf, offset):
@@ -1141,7 +1155,13 @@ class OFPMeterStats(object):
                             buf, offset)
          offset += ofproto_v1_3.OFP_METER_STATS_SIZE
 
-         # TODO: parse ofp_meter_band_stats
+         meter_stats.band_stats = []
+         length = ofproto_v1_3.OFP_METER_STATS_SIZE
+         while length < meter_stats.len:
+             band_stats = OFPMeterBandStats.parser(buf, offset)
+             meter_stats.band_stats.append(band_stats)
+             offset += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE
+             length += ofproto_v1_3.OFP_METER_BAND_STATS_SIZE             
 
          return meter_stats
 
@@ -1168,6 +1188,20 @@ class OFPMeterStatsReply(OFPMultipartReply):
         super(OFPMeterStatsReply, self).__init__(datapath)
 
 
+class OFPMeterBandHeader(object):
+    def __init__(self, type_, len_, rate, burst_size):
+        self.type = type_
+        self.len = len_
+        self.rate = rate
+        self.burst_size = burst_size
+
+    @classmethod
+    def parser(cls, buf, offset):
+        band_header = struct.unpack_from(
+            ofproto_v1_3.OFP_METER_BAND_HEADER_PACK_STR, buf, offset)
+        return cls(*band_header)
+
+
 class OFPMeterConfigStats(object):
     def __init__(self):
         super(OFPMeterConfigStats, self).__init__()
@@ -1186,7 +1220,13 @@ class OFPMeterConfigStats(object):
                             buf, offset)
          offset += ofproto_v1_3.OFP_METER_CONFIG_SIZE
 
-         # TODO: parse ofp_meter_band_header
+         meter_config.bands = []
+         length = ofproto_v1_3.OFP_METER_CONFIG_SIZE
+         while length < meter_config.length:
+             band_header = OFPMeterBandHeader.parser(buf, offset)
+             meter_config.bands.append(band_header)
+             offset += band_header.len
+             length += band_header.len
 
          return meter_config
 
