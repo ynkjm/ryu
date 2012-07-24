@@ -30,6 +30,7 @@ log.early_init_log(logging.DEBUG)
 from ryu import version
 from ryu import utils
 from ryu.app import wsgi
+from ryu.app import simple_switch
 from ryu.base.app_manager import AppManager
 from ryu.controller import controller
 from ryu.tests.integrated import tester

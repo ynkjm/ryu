@@ -15,17 +15,24 @@
 
 import logging
 import struct
+import gflags
 
 from ryu.base import app_manager
-from ryu.controller import mac_to_port
 from ryu.controller import ofp_event
+from ryu.controller import dpset
 from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_0
 from ryu.lib.mac import haddr_to_str
+from ryu.app.multiple_controllers_zk import MultipleControllers
 
 
 LOG = logging.getLogger('ryu.app.simple_switch')
+
+FLAGS = gflags.FLAGS
+gflags.DEFINE_string('ofp_controller_role', '', 'role of a controller')
+
+ZHOST = '127.0.0.1:2181'  # TODO: XXX
 
 # TODO: we should split the handler into two parts, protocol
 # independent and dependant parts.
@@ -37,10 +44,15 @@ LOG = logging.getLogger('ryu.app.simple_switch')
 
 class SimpleSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
+    _CONTEXTS = {
+        'dpset': dpset.DPSet,
+        }
 
     def __init__(self, *args, **kwargs):
         super(SimpleSwitch, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
+        self.mc = MultipleControllers(FLAGS.ofp_controller_role,
+                                      ZHOST)
 
     def add_flow(self, datapath, in_port, dst, actions):
         ofproto = datapath.ofproto
@@ -55,7 +67,7 @@ class SimpleSwitch(app_manager.RyuApp):
 
         mod = datapath.ofproto_parser.OFPFlowMod(
             datapath=datapath, match=match, cookie=0,
-            command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+            command=ofproto.OFPFC_ADD, idle_timeout=5, hard_timeout=5,
             priority=ofproto.OFP_DEFAULT_PRIORITY,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
         datapath.send_msg(mod)
@@ -108,3 +120,8 @@ class SimpleSwitch(app_manager.RyuApp):
             LOG.info("port modified %s", port_no)
         else:
             LOG.info("Illeagal port state %s %s", port_no, reason)
+
+    @set_ev_cls(dpset.EventDP, dpset.DPSET_EV_DISPATCHER)
+    def handle_datapath(self, ev):
+        if ev.enter:
+            self.mc.handle_datapath(ev)
